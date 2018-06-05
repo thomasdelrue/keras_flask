@@ -31,9 +31,11 @@ app = flask.Flask(__name__)
 db = redis.StrictRedis(host='localhost', port=6379, db=0)
 model = None
 
+
 def base64_encode_image(a):
     # base64 encode the input NumPy array
     return base64.b64encode(a).decode('utf-8')
+
 
 def base64_decode_image(a, dtype, shape):
     if sys.version_info.major == 3:
@@ -47,3 +49,22 @@ def base64_decode_image(a, dtype, shape):
     return a
 
 
+def prepare_image(image, target):
+    # if the image mode is not RGB, convert it
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
+        
+    # resize the input image and preprocess it
+    image = image.resize(target)
+    image = img_to_array(image)
+    image = np.expand_dims(image, axis=0)
+    image = imagenet_utils.preprocess_input(image)
+    
+    return image
+
+
+def classify_process():
+    """ load the pre-trained Keras model"""
+    print('* Loading model...')
+    model = ResNet50(weights='imagenet')
+    print('* Model loaded')
